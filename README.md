@@ -1,3 +1,5 @@
+<img src="./public/screenshot.webp" alt="APP screenshot" >
+
 # Administrador de archivos de Discord
 
 Puedes obtener los archivos que deseas que se hayan publicado en algun canal de Discord con solo reaciónar al mensaje, en la app puedes seleciónar el canal de destino en donde se enviaran los archivos selecionados, puedes elejir que archivos enviar y que no, agregar más archivos de otros mensajes en uno solo.

@@ -1,0 +1,31 @@
+.tooltip{
+  padding: 6px 8px;
+  z-index: 200;
+  position: fixed;
+  box-shadow: -1px 3px 10px var(--Tooltip-color);
+  border-radius: 6px;
+  pointer-events: none;
+  background-color: var(--Tooltip-color);
+}
+
+.tooltip-arrow{
+  /* display: none; */
+  z-index: 2;
+  position: absolute;
+  /* border-color: var(--Element-color); */
+  
+
+}
+
+.top .tooltip-arrow{
+  bottom: -13px;
+  border: 7px solid transparent;
+  border-top: 8px solid var(--Tooltip-color);
+}
+
+
+.bottom .tooltip-arrow{
+  top: -13px;
+  border: 7px solid transparent;
+  border-bottom: 8px solid var(--Tooltip-color);
+}

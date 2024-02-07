@@ -34,7 +34,6 @@ export default function MoveFiles(){
       customSecondFetch<DiscordMessage[]>(`channels/${originId}/messages?around=${originMessageId}&limit=1`).then(res => {
         if (res.length !== 0) {
           const message = res.find(f => f.id === originMessageId)
-          console.log(message)
           
           if (message) setOriginMessage(message)
         }
@@ -46,19 +45,17 @@ export default function MoveFiles(){
     if (destinationId.length > 17){
       customPrincipalFetch<DiscordChannel>(`channels/${destinationId}`).then(res => {
         if (res.id !== undefined) {
-          // console.log(res)
           setDestinationChannel(res)
           if (res.last_message_id) {
             customPrincipalFetch<DiscordMessage[]>(`channels/${destinationId}/messages?limit=2`).then(messages => {
-              console.log(messages)
               if (messages.length !== 0) {
                 const message = messages[0]
-                // console.log(message)
                 setLastMessageDestination(message)
               } else {
                 createNotification({
                   type: 'INFO',
-                  content: 'El canal de destino no contiene mensajes'
+                  content: 'El canal de destino no contiene mensajes',
+                  duration: 30
                 })
               }
             }).catch(e => {
@@ -68,8 +65,10 @@ export default function MoveFiles(){
           } else {
             createNotification({
               type: 'WARNING',
-              content: 'No hay mensajes en el canal de destino'
+              content: 'No hay mensajes en el canal de destino',
+              duration: 30
             })
+            setLastMessageDestination(undefined)
           }
         }
       }).catch(e => {
@@ -77,7 +76,7 @@ export default function MoveFiles(){
       })
     } else if (destinationChannel && destinationChannel.id !== destinationId) {
       setLastMessageDestination(undefined)
-      setOriginChannel(undefined)
+      setDestinationChannel(undefined)
     }
 
     if (fileUrl) {

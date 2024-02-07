@@ -11,8 +11,14 @@ export interface Notification {
 
 
 export interface ServerToClientEvents {
-  sendFiles: (message: DiscordMessage) => void
-  addFiles: (attachments: DiscordAttachment[]) => void
+  sendMessage: (message: {
+    id: string
+    channelId: string
+  }) => void
+  addFiles: (message: {
+    id: string
+    channelId: string
+  }) => void
 }
 
 // export interface ClientToServerEvents {
@@ -21,61 +27,56 @@ export interface ServerToClientEvents {
 
 export interface DiscordUser {
   id: string
-  bot: boolean
-  system: boolean
-  premiumSince: null
-  premiumGuildSince: null
-  bio: string | null
+  avatar: string
+  username: string
+  global_name: string
 }
 
 export interface DiscordChannel {
   id: string
   type: number
-  name: string
-  nsfw: boolean
-  flags: number
-  topic: string | null
-  guild_id: string
-  position: number
-  parent_id: string | null
-  icon_emoji: object
-  theme_color: null
-  lastMessage: DiscordMessage | undefined
-  last_message_id: string
-  rate_limit_per_user: number | null
+  guild_id?: string
+  position?: number
+  name?: string
+  topic?: string
+  nsfw?: boolean
+  last_message_id?: string
+  parent_id?: string
+  rate_limit_per_user?: number
 }
 
 export interface DiscordAttachment {
   id: string
-  url: string
-  name: string
+  filename: string
+  description?: string
+  content_type?: string
   size: number
-  width: number
-  height: number
-  proxyURL: string
-  ephemeral: boolean
-  attachment: string
-  contentType: string | null
-  description: string | null
+  url: string
+  proxy_url: string
+  width?: number
+  height?: number
+  ephemeral?: boolean
+  duration_secs?: number
+  duration_secs?: string
+  flags?: number
 }
 
 export interface DiscordMessage {
   id: string
-  channelId: string
-  guildId: string
-  position: null
-  createdTimestamp: number
-  system: boolean
-  type: string
+  type: number
   content: string
-  author: DiscordUser 
-  pinned: boolean
-  tts: false
-  nonce: null
-  embeds: []
-  components: []
+  channel_id: string
+  author: DiscordUser
   attachments: DiscordAttachment[]
-  editedTimestamp: number | null
+  embeds: any[]
+  mentions: any[]
+  mention_roles: string[]
+  pinned: boolean
+  mention_everyone: boolean
+  tts: boolean
+  timestamp: string
+  edited_timestamp: string
+  flags: number
 }
 
 export interface DiscordGuild {

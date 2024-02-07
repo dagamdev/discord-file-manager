@@ -1,5 +1,5 @@
 import { Tooltip } from "../contexts"
-import { ENDPOINT } from "./data"
+import { ENDPOINT, PRINCIPAL_TOKEN, SECOND_TOKEN } from "./data"
 
 export function setTooltipPosition(tooltip: Tooltip, element: HTMLDivElement) {
   const { innerWidth } = window
@@ -78,18 +78,29 @@ export function uuidGenerator() {
   return arr.join('')
 }
 
-export async function customFetch(route: string, token: string, method?: string, body?: object) {
-  return fetch(`https://discord.com/api/v10/${route}`, {
-    method,
-    headers: {
-      "Authorization": `${token}`,
-      "Content-Type": "application/json"
-    },
-    body: body ? JSON.stringify(body) : undefined
-  }).then(prom=> prom.json())
+export function createCustomFetch(token: string) {
+  return async <T = any> (route: string, data?: {
+    method?: string
+    body?: object
+  }): Promise<T> => {
+    const response = await fetch(`https://discord.com/api/v9/${route}`, {
+      method: data?.method,
+      headers: {
+        "Authorization": `${token}`,
+        "Content-Type": "application/json"
+      },
+      body: data?.body ? JSON.stringify(data.body) : undefined
+    })
+  
+    return response.json()
+  }
 }
 
-export async function myApiFetch(route: string, method?: string, body?: object) {
+export const customPrincipalFetch = createCustomFetch(PRINCIPAL_TOKEN)
+
+export const customSecondFetch = createCustomFetch(SECOND_TOKEN) 
+
+export async function myApiFetch<T = any>(route: string, method?: string, body?: object): Promise<T> {
   return fetch(`${ENDPOINT}dc/${route}`, {
     method,
     headers: {

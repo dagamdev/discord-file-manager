@@ -1,61 +1,34 @@
 import { useNotifications } from "../contexts"
-import { TOKEN } from "../utils/data"
-import { customFetch, myApiFetch } from "../utils/functions"
+import { SECOND_TOKEN } from "../utils/data"
+import { createCustomFetch, myApiFetch } from "../utils/functions"
 import type { DiscordChannel, DiscordGuild, DiscordMessage, StateFunction } from '../types'
+
+const customFetch = createCustomFetch(SECOND_TOKEN)
 
 export function useDiscord() {
   const { createNotification } = useNotifications()
 
-  const setDefaultErrorNotification = (e: Error) => {
+  const setDefaultErrorNotification = (content: string) => {
     createNotification({
       type: 'ERROR',
-      content: e.message,
+      content,
       duration: 20
     })
-  }
-
-  const getDestination = async ({destinationId, setDestination}: {
-    destinationId: string
-    setDestination: StateFunction<DiscordChannel | undefined>
-  }) => {
-    const channel = await customFetch(`channels/${destinationId}`, TOKEN)
-      // console.log(ch)
-
-    if(channel.id){
-      const messages = await myApiFetch(`channels/${destinationId}/messages?limit=4`)
-
-      setDestination(channel)
-      
-      if(messages.length){
-        const lastMessage = messages.find((f: DiscordMessage)=> f.attachments.length)
-        channel.lastMessage = lastMessage
-        return true
-        
-      }else{
-        setDefaultErrorNotification(messages)
-        return false
-      }
-      
-
-    }else{
-      console.log(channel)
-      setDefaultErrorNotification(channel)
-      return false
-    }
   }
 
   const getChannel = async ({channelId, setChannel}: {
     channelId: string
     setChannel: StateFunction<DiscordChannel | undefined>
   }) => {
-    const channel = await customFetch(`channels/${channelId}`, TOKEN)
+    const channel = await customFetch(`channels/${channelId}`)
+    console.log(channel)
     
     if(channel.id){
       setChannel(channel)
       return true
 
     }else{
-      setDefaultErrorNotification(channel)
+      setDefaultErrorNotification('Error al obtener el canal')
       return false
     }
   }
@@ -92,7 +65,6 @@ export function useDiscord() {
   }
 
   return {
-    getDestination,
     getChannel,
     getMessage,
     getGuild

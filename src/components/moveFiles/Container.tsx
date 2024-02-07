@@ -27,9 +27,8 @@ export default function Container({ title, channel, manage = false }: {
   const [fileNumber, setFileNumber] = useState(0)
 
   const lastAttachmentDestination = useMemo(()=> {
-    // const destinationAttachments = destinationChannel?.lastMessage?.attachments
     return messageDestination?.attachments.slice().pop()
-  }, [destinationChannel])
+  }, [messageDestination])
   
   useEffect(()=> {
     // console.log(message?.attachments)
@@ -39,7 +38,7 @@ export default function Container({ title, channel, manage = false }: {
     )
     else if(error) setError('')
 
-    if(message?.attachments.length){
+    if(manage && message?.attachments.length) {
       let fileCount = fileNumber
       
       message.attachments.forEach(at=> {
@@ -58,7 +57,9 @@ export default function Container({ title, channel, manage = false }: {
   }, [message])
 
   useEffect(()=> {
-    setFileNumber(parseInt(lastAttachmentDestination?.filename.match(/\d+/g)?.[0] || '0'))
+    if (manage) {
+      setFileNumber(parseInt(lastAttachmentDestination?.filename.match(/\d+/g)?.[0] || '0'))
+    }
   }, [lastAttachmentDestination])
 
 
@@ -66,7 +67,7 @@ export default function Container({ title, channel, manage = false }: {
     if(value) setFileNumber(parseInt(value))
   }
 
-  const moveFiles = () => {
+  const moveFiles = async () => {
     let fileCount = fileNumber
     const files = message?.attachments.filter(f=> fileIds.some(s=> s === f.id))
     
@@ -76,17 +77,37 @@ export default function Container({ title, channel, manage = false }: {
       at.filename = name
     })
 
-    // console.log(files)
+    const attachments: {
+      id: number
+      filename: string
+      description?: string
+    }[] = []
+    
 
     if(destinationChannel && files?.length){
+      const body = new FormData()
+
+      for (const [key, file] of files.entries()) {
+        const resposne = await fetch(file.proxy_url)
+        const blob = await resposne.blob()
+
+        body.append(`files[${key}]`, blob, file.filename)
+        attachments.push({
+          id: key,
+          filename: file.filename,
+          description: file.description
+        })
+      }
+
+      body.append('payload_json', JSON.stringify({
+        attachments
+      }))
+
+
       customPrincipalFetch(`channels/${destinationChannel.id}/messages`, {
         method: 'POST',
-        body: {
-          attachments: files,
-          content: "asd",
-        }
+        body
       }).then(res => {
-        console.log(res)
         if(res.id){
           const s = files.length != 1 ? 's' : ''
           createNotification({
@@ -95,39 +116,36 @@ export default function Container({ title, channel, manage = false }: {
             duration: 30
           })
 
-          if(setDestinationChannel && destinationChannel) {
-            customSecondFetch<DiscordChannel>(`channels/${destinationChannel.id}`).then(res => {
-              if (res.id !== undefined) {
-                console.log(res)
-                setDestinationChannel(res)
-                if (res.last_message_id) {
-                  customSecondFetch<DiscordMessage[]>(`channels/${destinationChannel.id}/messages`).then(messages => {
-                    console.log(messages)
-                    if (messages.length !== 0) {
-                      const message = messages[0]
-                      console.log(message)
-                      setMessageDestination(message)
-                    } else {
-                      createNotification({
-                        type: 'INFO',
-                        content: 'El canal de destino no contiene mensajes'
-                      })
-                    }
-                  }).catch(e => {
-                    console.error(e)
-                  })
-      
-                } else {
-                  createNotification({
-                    type: 'WARNING',
-                    content: 'No hay mensajes en el canal de destino'
-                  })
-                }
+          customSecondFetch<DiscordChannel>(`channels/${destinationChannel.id}`).then(res => {
+            if (res.id !== undefined) {
+              setDestinationChannel(res)
+              if (res.last_message_id) {
+                customSecondFetch<DiscordMessage[]>(`channels/${destinationChannel.id}/messages`).then(messages => {
+                  if (messages.length !== 0) {
+                    const message = messages[0]
+                    setMessageDestination(message)
+                  } else {
+                    createNotification({
+                      type: 'INFO',
+                      content: 'El canal de destino no contiene mensajes',
+                      duration: 30
+                    })
+                  }
+                }).catch(e => {
+                  console.error(e)
+                })
+    
+              } else {
+                createNotification({
+                  type: 'WARNING',
+                  content: 'No hay mensajes en el canal de destino',
+                  duration: 30
+                })
               }
-            }).catch(e => {
-              console.error(e)
-            }) 
-          }
+            }
+          }).catch(e => {
+            console.error(e)
+          }) 
 
         } else if(res.message){
           createNotification({

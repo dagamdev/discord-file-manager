@@ -180,6 +180,15 @@
     border-top-right-radius: 6px;
     /* background-color: #1d1d1dab; */
   }
+
+  & p{
+    display: flex;
+    flex-direction: column;
+
+    & span{
+      font-weight: 500;
+    }
+  }
 }
 
 .delete-file{

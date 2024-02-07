@@ -11,7 +11,7 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
   check?: boolean
   viewFile: boolean
 }){
-  const { setMessage } = useMoveFiles()
+  const { setOriginMessage } = useMoveFiles()
   const { events, deleteTooltip } = useTooltip()
   const { setImage } = useImage()
   const [showFile, setShowFile] = useState<boolean>()
@@ -39,12 +39,12 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
   }
 
   const downloadFile = () => {
-    if(!attachment.contentType?.includes('video')){
-      fetch(attachment.attachment).then(res=> res.blob()).then(blob=> {
+    if(!attachment.content_type?.includes('video')){
+      fetch(attachment.url).then(res=> res.blob()).then(blob=> {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = attachment.name
+        link.download = attachment.filename
   
         document.body.appendChild(link);
         link.click();
@@ -55,7 +55,7 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
   }
 
   const deleteFile = () => {
-    setMessage(ms=> {
+    setOriginMessage(ms=> {
       if (ms) {
         return {...ms, attachments: ms.attachments.filter(f=> f.id != attachment.id)}
       } else return undefined
@@ -64,50 +64,50 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
   }
   
   const head = (
-    <div className={`attachment-head ${showFile ? 'file' : ''}`}>
-      <div>
-        <strong>{attachment.name}</strong>
-        <p>MB {(attachment.size/1048576).toFixed(2)}</p>
-      </div>
+    <header className={`attachment-head ${showFile ? 'file' : ''}`}>
+      <p>
+        <strong>{attachment.filename}</strong>
+        <span>MB {(attachment.size/1048576).toFixed(2)}</span>
+      </p>
       <div onClick={downloadFile} className='attachment-head-download badge' {...events} data-tooltip='Descargar' >
         <BsDownload />
       </div>
-      <div className='attachment-head-options' >
-        <BiX onClick={deleteFile} {...events} data-tooltip='Eliminar' />
+      <section className='attachment-head-options' >
+        {manage && <BiX onClick={deleteFile} {...events} data-tooltip='Eliminar' />}
         {showFile ? <BiShow onClick={toggleShowFile} {...events} data-tooltip={`Ocultar archivo`} /> : <BiHide onClick={toggleShowFile} {...events} data-tooltip={`Mostrar archivo`} />}
         {manage &&
           <div onClick={toggleCheck}>
             <BiCheck style={{opacity: check ? '1' : '0'}} />
           </div>
         }
-      </div>
-    </div>
+      </section>
+    </header>
   )
 
   const handleClick = () => {
-    setImage({src: attachment.attachment, alt: attachment.name})    
+    setImage({src: attachment.url, alt: attachment.filename})    
   }
 
   return (
     <li className='attachment'>
-      {(!showFile) && head}
-
-      {showFile &&
-        <div className='attachment-file'>
+      {showFile
+        ? <div className='attachment-file'>
           {head}
-          {attachment.contentType?.includes('video') ?
-          <video src={attachment.attachment} preload='metadata' controls autoPlay >
+          {attachment.content_type?.includes('video') ?
+          <video src={attachment.url} preload='metadata' controls autoPlay >
             {/* <source src="ruta/al/video.webm" type="video/webm" />
             <source src="ruta/al/video.ogv" type="video/ogg" /> */}
             Tu navegador no soporta la etiqueta de video.
           </video> :
-          <img onClick={handleClick} src={attachment.attachment} alt={attachment.name} />}
+          <img onClick={handleClick} src={attachment.url} alt={attachment.filename} />}
           
           <div className='dimentions'>
             <strong>{attachment.width} × {attachment.height}</strong>
           </div>
         </div>
+        : head
       }
+
     </li>
   )
 }

@@ -23,14 +23,14 @@ export default function Channel({channel}: {
   }
 
   return (
-    <div className='moveFile_channel'>
-      <div className='moveFile_channel-head'>
+    <section className='moveFile_channel'>
+      <header className='moveFile_channel-head'>
         <div className='badge' {...events} data-tooltip={`Typo ${channel?.type}`}>
           <BiHash />
         </div>
         <strong {...events} data-tooltip={`${channel?.nsfw ? 'Canal NSFW' : 'Canal normal'}`} >{channel?.name}</strong>
         {channel?.topic && <MdArrowBackIosNew className='moveFile_channel-head-toggle' onClick={toggleShowTopic} />}
-      </div>
+      </header>
 
       <div ref={topicContentRef} className={`moveFile_channel-topicContent ${showTopic ? 'show' : ''}`}>
         {channel?.topic && 
@@ -39,6 +39,6 @@ export default function Channel({channel}: {
           </div>
         }
       </div>
-    </div>
+    </section>
   )
 }

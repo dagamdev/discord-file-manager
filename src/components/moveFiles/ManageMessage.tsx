@@ -1,20 +1,19 @@
 import { useState, useEffect, useMemo, ChangeEvent } from 'react'
-import type { DiscordChannel, StateFunction } from "../../types";
 import Attachment from "./Attachment";
 import Channel from "./Channel";
 import { getFileNewData, myApiFetch } from '../../utils/functions';
 import { useMoveFiles, useNotifications, useTooltip } from '../../contexts';
 import { BiShow, BiHide } from 'react-icons/bi'
-import { useDiscord } from '../../hooks/useDiscord';
 
-export default function ManageMessage({destinationChannel, setDestination}: {
-  destinationChannel?: DiscordChannel
-  setDestination?: StateFunction<DiscordChannel | undefined>
-}){
-  const { channel, message } = useMoveFiles()
+export default function ManageMessage(){
+  const {
+    originChannel,
+    originMessage,
+    destinationChannel,
+    messageDestination
+  } = useMoveFiles()
   const { createNotification } = useNotifications()
   const { events, deleteTooltip } = useTooltip()
-  const { getDestination } = useDiscord()
   const [filesIds, setFilesIds] = useState<string[]>([])
   const [error, setError] = useState('')
   const [viewFile, setViewFile] = useState(false)
@@ -22,34 +21,34 @@ export default function ManageMessage({destinationChannel, setDestination}: {
 
   const destinationLastAttachment = useMemo(()=> {
     // const destinationAttachments = destinationChannel?.lastMessage?.attachments
-    return destinationChannel?.lastMessage?.attachments.slice().pop()
+    return messageDestination?.attachments.slice().pop()
   }, [destinationChannel])
   
   useEffect(()=> {
     // console.log(message?.attachments)
-    if(message && !message.attachments.length) setError('The message does not contain attachments')
+    if(originMessage && !originMessage.attachments.length) setError('The message does not contain attachments')
     else if(error) setError('')
 
-    if(message?.attachments.length){
+    if(originMessage?.attachments.length){
       let fileCount = fileNumber
       
-      message.attachments.forEach(at=> {
+      originMessage.attachments.forEach(at=> {
         fileCount++
-        const { name } = getFileNewData(at.name, fileCount)
-        at.name = name
+        const { name } = getFileNewData(at.filename, fileCount)
+        at.filename = name
       })
     } 
     
-  }, [message, destinationLastAttachment, fileNumber, error])
+  }, [originMessage, destinationLastAttachment, fileNumber, error])
 
   useEffect(()=> {
-    if(message?.attachments.length){
-      setFilesIds(message.attachments.map(m=> m.id))
+    if(originMessage?.attachments.length){
+      setFilesIds(originMessage.attachments.map(m=> m.id))
     } 
-  }, [message])
+  }, [originMessage])
 
   useEffect(()=> {
-    setFileNumber(parseInt(destinationLastAttachment?.name.match(/\d+/g)?.[0] || '0'))
+    setFileNumber(parseInt(destinationLastAttachment?.filename.match(/\d+/g)?.[0] || '0'))
   }, [destinationLastAttachment])
 
 
@@ -59,12 +58,12 @@ export default function ManageMessage({destinationChannel, setDestination}: {
 
   const moveFiles = () => {
     let fileCount = fileNumber
-    const files = message?.attachments.filter(f=> filesIds.some(s=> s==f.id))
+    const files = originMessage?.attachments.filter(f=> filesIds.some(s=> s==f.id))
     
     files?.forEach(at=> {
       fileCount++
-      const { name } = getFileNewData(at.name, fileCount)
-      at.name = name
+      const { name } = getFileNewData(at.filename, fileCount)
+      at.filename = name
     })
 
     // console.log(files)
@@ -81,11 +80,11 @@ export default function ManageMessage({destinationChannel, setDestination}: {
             duration: 30
           })
 
-          if(setDestination && destinationChannel) {
-            getDestination({
-              destinationId: destinationChannel.id,
-              setDestination 
-            })  
+          if(destinationChannel) {
+            // getDestination({
+            //   destinationId: destinationChannel.id,
+            //   setDestinationChannel 
+            // })  
           }
 
         }else if(res.message){
@@ -105,26 +104,26 @@ export default function ManageMessage({destinationChannel, setDestination}: {
     deleteTooltip()
   }
 
-  return channel ? (
+  return originChannel ? (
     <div className='channelSection'>
-      <span>{channel.position}</span>
+      <span>{originChannel.position}</span>
 
       <div className='channelSection-head'>
         <h3>Target message and channel</h3>
         <input onChange={onChange} type="number" value={fileNumber} {...events} data-tooltip='Numero del ultimo archivo' />
         {viewFile ? <BiShow onClick={toggleViewFiles} {...events} data-tooltip={`Ocultar archivos`} /> : <BiHide onClick={toggleViewFiles} {...events} data-tooltip={`Mostrar archivos`} />}
       </div>
-      <Channel channel={channel} />
+      <Channel channel={originChannel} />
 
       {error ? <p>{error}</p> : 
-        (message &&
+        (originMessage &&
           <ul className='channelSection-files'>
-            {message.attachments.map(at=> <Attachment key={at.id} attachment={at} manage={true} setFiles={setFilesIds} viewFile={viewFile} check={filesIds.some(s=> s==at.id)} />)}
+            {originMessage.attachments.map(at=> <Attachment key={at.id} attachment={at} manage={true} setFiles={setFilesIds} viewFile={viewFile} check={filesIds.some(s=> s==at.id)} />)}
           </ul>
         )
       }
 
-      {(destinationChannel && Boolean(message?.attachments.length) && !error) && <button onClick={moveFiles}>Move</button>}
+      {(destinationChannel && Boolean(originMessage?.attachments.length) && !error) && <button onClick={moveFiles}>Move</button>}
     </div>
   ) : null
 }

@@ -1,48 +1,84 @@
 import { useState, useEffect, ChangeEvent } from 'react'
 import { socket } from '../../utils/socket'
-import { DiscordAttachment, DiscordChannel, DiscordMessage } from '../../types'
-import DestinationChannel from './DestinationChannel'
-import ManageMessage from './ManageMessage'
-import { useDiscord } from '../../hooks/useDiscord'
+import { DiscordChannel, DiscordMessage } from '../../types'
 import { useNotifications } from '../../contexts'
 import { MoveFilesContext } from '../../contexts'
-import { myApiFetch } from '../../utils/functions'
+import { customSecondFetch, customPrincipalFetch } from '../../utils/functions'
+import Container from './Container'
 
 export default function MoveFiles(){
   const { createNotification } = useNotifications()
-  const { getDestination, getChannel, getMessage } = useDiscord()
   const [formData, setFormData] = useState({
-    destinationId: '', 
-    channelId: '', 
-    messageId: '',
+    originId: '', 
+    originMessageId: '',
+    destinationId: '',
     fileUrl: ''
   })
   const [destinationChannel, setDestinationChannel] = useState<DiscordChannel>()
-  const [channel, setChannel] = useState<DiscordChannel>()
-  const [message, setMessage] = useState<DiscordMessage>()
+  const [lastMessageDestination, setLastMessageDestination] = useState<DiscordMessage>()
+  const [originChannel, setOriginChannel] = useState<DiscordChannel>()
+  const [originMessage, setOriginMessage] = useState<DiscordMessage>()
 
   useEffect(()=> {
-    const { destinationId, channelId, messageId, fileUrl } = formData
-
-    if(destinationId.length > 17 && (destinationChannel?.id != destinationId)){
-      getDestination({destinationId, setDestination: setDestinationChannel}).then(success=> {
-        if (success){
-          createNotification({
-            content: 'Destination channel loaded',
-            type: 'INFO',
-            duration: 16
-          })
-        }
+    const { originId, originMessageId, destinationId, fileUrl } = formData
+    
+    if (originId.length > 17){
+      customSecondFetch<DiscordChannel>(`channels/${originId}`).then(res => {
+        if (res.id !== undefined) setOriginChannel(res)
+      }).catch(e => {
+        console.error(e)
       })
-    }else if(destinationChannel && destinationChannel.id != destinationId) setDestinationChannel(undefined)
+    } else if(originChannel && originChannel.id !== originId) setOriginChannel(undefined)
 
-    if(channelId.length > 17){
-      getChannel({channelId, setChannel})
-    }else if(channel && channel.id != channelId) setChannel(undefined)
+    if (originId && originMessageId.length > 17){
+      customSecondFetch<DiscordMessage[]>(`channels/${originId}/messages?around=${originMessageId}&limit=1`).then(res => {
+        if (res.length !== 0) {
+          const message = res.find(f => f.id === originMessageId)
+          console.log(message)
+          
+          if (message) setOriginMessage(message)
+        }
+      }).catch(e => {
+        console.error(e)
+      })
+    } else if(originMessage && originMessage.id !== originMessageId) setOriginChannel(undefined)
 
-    if(message?.id != messageId && messageId.length > 17){
-      getMessage({channelId, messageId, setMessage})
-    }else if(message && message.id != messageId) setMessage(undefined)
+    if (destinationId.length > 17){
+      customPrincipalFetch<DiscordChannel>(`channels/${destinationId}`).then(res => {
+        if (res.id !== undefined) {
+          // console.log(res)
+          setDestinationChannel(res)
+          if (res.last_message_id) {
+            customPrincipalFetch<DiscordMessage[]>(`channels/${destinationId}/messages?limit=2`).then(messages => {
+              console.log(messages)
+              if (messages.length !== 0) {
+                const message = messages[0]
+                // console.log(message)
+                setLastMessageDestination(message)
+              } else {
+                createNotification({
+                  type: 'INFO',
+                  content: 'El canal de destino no contiene mensajes'
+                })
+              }
+            }).catch(e => {
+              console.error(e)
+            })
+
+          } else {
+            createNotification({
+              type: 'WARNING',
+              content: 'No hay mensajes en el canal de destino'
+            })
+          }
+        }
+      }).catch(e => {
+        console.error(e)
+      })
+    } else if (destinationChannel && destinationChannel.id !== destinationId) {
+      setLastMessageDestination(undefined)
+      setOriginChannel(undefined)
+    }
 
     if (fileUrl) {
       // myApiFetch(`channels/1139624141100679178`, 'POST', {
@@ -60,69 +96,85 @@ export default function MoveFiles(){
   }, [formData])
 
   useEffect(()=> {
-    const handleSendFiles = (message: DiscordMessage) => {
-      // console.log(message.attachments)
-      if(formData.messageId != message.id){
-        setMessage(message)
-        setFormData({
-          destinationId: formData.destinationId,
-          channelId: message.channelId,
-          messageId: message.id,
-          fileUrl: ''
-        })
+    const handleSendMessage = (message: {
+      id: string
+      channelId: string
+    }) => {
+      console.log(message)
+      if(formData.originMessageId !== message.id){
+        setFormData(value => ({
+          ...value,
+          originId: message.channelId,
+          originMessageId: message.id,
+        }))
       }
     }
 
-    const handleAddFiles = (attachments: DiscordAttachment[]) => {
-      if (!message) return  createNotification({
+    const handleAddFiles = (message: {
+      id: string
+      channelId: string
+    }) => {
+      if (!originMessage) return  createNotification({
         content: 'No hay información de ningun mensaje',
         type: 'ERROR',
         duration: 20
       })
 
-      const totalAttachments = message.attachments.concat(attachments)
+      customSecondFetch<DiscordMessage[]>(`channels/${message.channelId}/messages?around=${message.id}&limit=1`).then(res => {
+        if (res.length !== 0) {
+          const messageFiles = res.find(f => f.id === message.id)?.attachments
+          
+          if (messageFiles !== undefined && messageFiles.length !== 0) {
+            const totalAttachments = originMessage.attachments.concat(messageFiles)
 
-      if (totalAttachments.length > 10) return createNotification({
-        content: 'Son mas de 10 archivos sumados',
-        type: 'ERROR',
-        duration: 20
-      })
-
-      setMessage({...message, attachments: totalAttachments})
-      createNotification({
-        content: `Se han sumando ${attachments.length} archivos, ahora son ${totalAttachments.length} archivos.`,
-        type: 'INFO',
-        duration: 20
+            if (totalAttachments.length > 10) return createNotification({
+              content: 'Son mas de 10 archivos sumados',
+              type: 'ERROR',
+              duration: 20
+            })
+      
+            setOriginMessage({...originMessage, attachments: totalAttachments})
+            createNotification({
+              content: `Se han sumando ${messageFiles.length} archivos, ahora son ${totalAttachments.length} archivos.`,
+              type: 'INFO',
+              duration: 20
+            })
+          }
+        }
+      }).catch(e => {
+        console.error(e)
       })
     }
 
-    socket.on('sendFiles', handleSendFiles)
+    socket.on('sendMessage', handleSendMessage)
     socket.on('addFiles', handleAddFiles)
     
     return ()=> {
-      socket.off('sendFiles', handleSendFiles)
+      socket.off('sendMessage', handleSendMessage)
       socket.off('addFiles', handleAddFiles)
     }
   })
 
   const handleChange = ({currentTarget}: ChangeEvent<HTMLInputElement>) => {
-    setFormData(fd=> ({...fd, [currentTarget.name]: currentTarget.value}))
+    setFormData(fd=> ({
+      ...fd, [currentTarget.name]: currentTarget.value
+    }))
   }
 
   return (
     <>
       <form className='moveFiles-form'>
+        <label htmlFor="originId">
+          Origin channel ID
+          <input onChange={handleChange} type="number" id='originId' name='originId' value={formData.originId} />
+        </label>
+        <label htmlFor="originMessageId">
+          Message ID
+          <input onChange={handleChange} type="number" id='originMessageId' name='originMessageId' value={formData.originMessageId} />
+        </label>
         <label htmlFor="destinationId">
           Destination channel ID
           <input onChange={handleChange} type="number" id='destinationId' name='destinationId' value={formData.destinationId} />
-        </label>
-        <label htmlFor="channelId">
-          Channel ID
-          <input onChange={handleChange} type="number" id='channelId' name='channelId' value={formData.channelId} />
-        </label>
-        <label htmlFor="messageId">
-          Message ID
-          <input onChange={handleChange} type="number" id='messageId' name='messageId' value={formData.messageId} />
         </label>
         <label htmlFor="fileUrl">
           File url
@@ -132,16 +184,30 @@ export default function MoveFiles(){
 
       <section className='section'>
         <MoveFilesContext.Provider value={{
-          channel,
-          setChannel,
-          message,
-          setMessage
+          destinationChannel,
+          setDestinationChannel,
+          messageDestination: lastMessageDestination,
+          setMessageDestination: setLastMessageDestination,
+          originChannel,
+          setOriginChannel,
+          originMessage,
+          setOriginMessage
         }}>
-          {destinationChannel && <DestinationChannel channel={destinationChannel} />}
-          {channel && <ManageMessage 
+          {destinationChannel && <Container
+            title='Destination channel'
+            channel={destinationChannel}
+          />}
+          {originChannel && <Container
+            title='Target message and channel'
+            channel={originChannel}
+            manage
+          />}
+
+          {/* {destinationChannel && <DestinationChannel channel={destinationChannel} />} */}
+          {/* {channel && <ManageMessage 
             destinationChannel={destinationChannel?.type == 0 ? destinationChannel : undefined} 
             setDestination={setDestinationChannel}
-            />}
+            />} */}
         </MoveFilesContext.Provider>
       </section>
     </>

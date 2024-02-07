@@ -2,10 +2,14 @@ import { createContext, useContext } from 'react'
 import type { DiscordChannel, DiscordMessage, StateFunction } from '../types'
 
 interface MoveFilesContextData {
-  channel?: DiscordChannel
-  setChannel: StateFunction<DiscordChannel | undefined>
-  message?: DiscordMessage
-  setMessage: StateFunction<DiscordMessage | undefined>
+  originChannel?: DiscordChannel
+  setOriginChannel: StateFunction<DiscordChannel | undefined>
+  originMessage?: DiscordMessage
+  setOriginMessage: StateFunction<DiscordMessage | undefined>
+  destinationChannel?: DiscordChannel
+  setDestinationChannel: StateFunction<DiscordChannel | undefined>
+  messageDestination?: DiscordMessage
+  setMessageDestination: StateFunction<DiscordMessage | undefined>
 }
 
 export const MoveFilesContext = createContext<MoveFilesContextData | undefined>(undefined)

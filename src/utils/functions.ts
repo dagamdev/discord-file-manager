@@ -79,17 +79,26 @@ export function uuidGenerator() {
 }
 
 export function createCustomFetch(token: string) {
-  return async <T = any> (route: string, data?: {
+  return async <T = any> (path: string, data?: {
     method?: string
-    body?: object
+    body?: FormData | object
   }): Promise<T> => {
-    const response = await fetch(`https://discord.com/api/v9/${route}`, {
+    const headers: HeadersInit = {
+      'Authorization': `${token}`
+    }
+
+    if (data?.body && !(data.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json'
+    }
+
+    const response = await fetch(`https://discord.com/api/v10/${path}`, {
       method: data?.method,
-      headers: {
-        "Authorization": `${token}`,
-        "Content-Type": "application/json"
-      },
-      body: data?.body ? JSON.stringify(data.body) : undefined
+      headers,
+      body: data?.body
+        ? data.body instanceof FormData
+          ? data.body
+          : JSON.stringify(data.body)
+        : undefined
     })
   
     return response.json()

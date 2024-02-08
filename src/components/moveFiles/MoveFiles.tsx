@@ -1,28 +1,33 @@
 import { useState, useEffect, ChangeEvent } from 'react'
 import { socket } from '../../utils/socket'
 import { DiscordChannel, DiscordMessage } from '../../types'
-import { useNotifications } from '../../contexts'
-import { MoveFilesContext } from '../../contexts'
+import { useMoveFiles, useNotifications } from '../../contexts'
 import { customSecondFetch, customPrincipalFetch } from '../../utils/functions'
 import Container from './Container'
+import packageData from '../../../package.json'
+import GetFileByUrl from './GetFileByUrl'
 
 export default function MoveFiles(){
+  const {
+    destinationChannel,
+    setDestinationChannel,
+    setMessageDestination,
+    originChannel,
+    setOriginChannel,
+    originMessage,
+    setOriginMessage
+  } = useMoveFiles()
   const { createNotification } = useNotifications()
   const [formData, setFormData] = useState({
     originId: '', 
     originMessageId: '',
-    destinationId: '',
-    fileUrl: ''
+    destinationId: ''
   })
-  const [destinationChannel, setDestinationChannel] = useState<DiscordChannel>()
-  const [lastMessageDestination, setLastMessageDestination] = useState<DiscordMessage>()
-  const [originChannel, setOriginChannel] = useState<DiscordChannel>()
-  const [originMessage, setOriginMessage] = useState<DiscordMessage>()
 
   useEffect(()=> {
-    const { originId, originMessageId, destinationId, fileUrl } = formData
+    const { originId, originMessageId, destinationId } = formData
     
-    if (originId.length > 17){
+    if (originId.length > 17 && originId !== originChannel?.id){
       customSecondFetch<DiscordChannel>(`channels/${originId}`).then(res => {
         if (res.id !== undefined) setOriginChannel(res)
       }).catch(e => {
@@ -30,17 +35,16 @@ export default function MoveFiles(){
       })
     } else if(originChannel && originChannel.id !== originId) setOriginChannel(undefined)
 
-    if (originId && originMessageId.length > 17){
+    if (originId && originMessageId.length > 17 && originMessageId !== originMessage?.id){
       customSecondFetch<DiscordMessage[]>(`channels/${originId}/messages?around=${originMessageId}&limit=1`).then(res => {
         if (res.length !== 0) {
           const message = res.find(f => f.id === originMessageId)
-          
           if (message) setOriginMessage(message)
         }
       }).catch(e => {
         console.error(e)
       })
-    } else if(originMessage && originMessage.id !== originMessageId) setOriginChannel(undefined)
+    } else if(originMessage && originMessage.id !== originMessageId) setOriginMessage(undefined)
 
     if (destinationId.length > 17){
       customPrincipalFetch<DiscordChannel>(`channels/${destinationId}`).then(res => {
@@ -50,7 +54,7 @@ export default function MoveFiles(){
             customPrincipalFetch<DiscordMessage[]>(`channels/${destinationId}/messages?limit=2`).then(messages => {
               if (messages.length !== 0) {
                 const message = messages[0]
-                setLastMessageDestination(message)
+                setMessageDestination(message)
               } else {
                 createNotification({
                   type: 'INFO',
@@ -68,30 +72,16 @@ export default function MoveFiles(){
               content: 'No hay mensajes en el canal de destino',
               duration: 30
             })
-            setLastMessageDestination(undefined)
+            setMessageDestination(undefined)
           }
         }
       }).catch(e => {
         console.error(e)
       })
     } else if (destinationChannel && destinationChannel.id !== destinationId) {
-      setLastMessageDestination(undefined)
+      setMessageDestination(undefined)
       setDestinationChannel(undefined)
     }
-
-    if (fileUrl) {
-      // myApiFetch(`channels/1139624141100679178`, 'POST', {
-      //   attachments: [
-      //     {
-      //       name: 'video.jpg',
-      //       attachment: 'https://i.mart.moe/K1Vv7kwN0sC01Q'
-      //     }
-      //   ],
-      // }).then(res => {
-      //   console.log(res)
-      // }).catch(e => console.error(e))
-    }
-
   }, [formData])
 
   useEffect(()=> {
@@ -99,7 +89,6 @@ export default function MoveFiles(){
       id: string
       channelId: string
     }) => {
-      console.log(message)
       if(formData.originMessageId !== message.id){
         setFormData(value => ({
           ...value,
@@ -162,52 +151,35 @@ export default function MoveFiles(){
 
   return (
     <>
-      <form className='moveFiles-form'>
-        <label htmlFor="originId">
-          Origin channel ID
-          <input onChange={handleChange} type="number" id='originId' name='originId' value={formData.originId} />
-        </label>
-        <label htmlFor="originMessageId">
-          Message ID
-          <input onChange={handleChange} type="number" id='originMessageId' name='originMessageId' value={formData.originMessageId} />
-        </label>
-        <label htmlFor="destinationId">
-          Destination channel ID
-          <input onChange={handleChange} type="number" id='destinationId' name='destinationId' value={formData.destinationId} />
-        </label>
-        <label htmlFor="fileUrl">
-          File url
-          <input onChange={handleChange} type="url" id='fileUrl' name='fileUrl' value={formData.fileUrl} />
-        </label>
-      </form>
+      <header className='moveFiles-header'>
+        <span className='moveFiles-version'>v{packageData.version}</span>
+        <form className='moveFiles-form' onClick={(e) => { e.preventDefault() }}>
+          <label htmlFor="originId">
+            Origin channel ID
+            <input onChange={handleChange} type="number" id='originId' name='originId' value={formData.originId} />
+          </label>
+          <label htmlFor="originMessageId">
+            Message ID
+            <input onChange={handleChange} type="number" id='originMessageId' name='originMessageId' value={formData.originMessageId} />
+          </label>
+          <label htmlFor="destinationId">
+            Destination channel ID
+            <input onChange={handleChange} type="number" id='destinationId' name='destinationId' value={formData.destinationId} />
+          </label>
+          <GetFileByUrl />
+        </form>
+      </header>
 
       <section className='section'>
-        <MoveFilesContext.Provider value={{
-          destinationChannel,
-          setDestinationChannel,
-          messageDestination: lastMessageDestination,
-          setMessageDestination: setLastMessageDestination,
-          originChannel,
-          setOriginChannel,
-          originMessage,
-          setOriginMessage
-        }}>
-          {destinationChannel && <Container
-            title='Destination channel'
-            channel={destinationChannel}
-          />}
-          {originChannel && <Container
-            title='Target message and channel'
-            channel={originChannel}
-            manage
-          />}
-
-          {/* {destinationChannel && <DestinationChannel channel={destinationChannel} />} */}
-          {/* {channel && <ManageMessage 
-            destinationChannel={destinationChannel?.type == 0 ? destinationChannel : undefined} 
-            setDestination={setDestinationChannel}
-            />} */}
-        </MoveFilesContext.Provider>
+        {destinationChannel && <Container
+          title='Destination channel'
+          channel={destinationChannel}
+        />}
+        {originChannel && <Container
+          title='Target message and channel'
+          channel={originChannel}
+          manage
+        />}
       </section>
     </>
   )

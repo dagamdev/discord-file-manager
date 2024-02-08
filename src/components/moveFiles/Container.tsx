@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, ChangeEvent } from 'react'
-import type { DiscordChannel, DiscordMessage } from "../../types"
+import type { DiscordChannel } from "../../types"
 import Attachment from "./Attachment"
 import Channel from "./Channel"
-import { customSecondFetch, getFileNewData, myApiFetch } from '../../utils/functions'
+import { getFileNewData, myApiFetch } from '../../utils/functions'
 import { useMoveFiles, useNotifications, useTooltip } from '../../contexts'
 import { BiShow, BiHide } from 'react-icons/bi'
+import { getChannel, getMessages } from '../../lib/discord'
 
 export default function Container({ title, channel, manage = false }: {
   title: string
@@ -91,11 +92,13 @@ export default function Container({ title, channel, manage = false }: {
             duration: 30
           })
 
-          customSecondFetch<DiscordChannel>(`channels/${destinationChannel.id}`).then(res => {
+          getChannel('principal', destinationChannel.id).then(res => {
             if (res.id !== undefined) {
               setDestinationChannel(res)
               if (res.last_message_id) {
-                customSecondFetch<DiscordMessage[]>(`channels/${destinationChannel.id}/messages`).then(messages => {
+                getMessages('principal', destinationChannel.id, {
+                  limit: '4'
+                }).then(messages => {
                   if (messages.length !== 0) {
                     const message = messages[0]
                     setMessageDestination(message)

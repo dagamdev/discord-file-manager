@@ -1,11 +1,10 @@
 import { useState, useEffect, ChangeEvent } from 'react'
 import { socket } from '../../utils/socket'
-import { DiscordChannel, DiscordMessage } from '../../types'
 import { useMoveFiles, useNotifications } from '../../contexts'
-import { customSecondFetch, customPrincipalFetch } from '../../utils/functions'
 import Container from './Container'
 import packageData from '../../../package.json'
 import GetFileByUrl from './GetFileByUrl'
+import { getChannel, getMessages } from '../../lib/discord'
 
 export default function MoveFiles(){
   const {
@@ -28,30 +27,28 @@ export default function MoveFiles(){
     const { originId, originMessageId, destinationId } = formData
     
     if (originId.length > 17 && originId !== originChannel?.id){
-      customSecondFetch<DiscordChannel>(`channels/${originId}`).then(res => {
-        if (res.id !== undefined) setOriginChannel(res)
-      }).catch(e => {
+      getChannel('second', originId, setOriginChannel).catch(e => {
         console.error(e)
       })
     } else if(originChannel && originChannel.id !== originId) setOriginChannel(undefined)
 
     if (originId && originMessageId.length > 17 && originMessageId !== originMessage?.id){
-      customSecondFetch<DiscordMessage[]>(`channels/${originId}/messages?around=${originMessageId}&limit=1`).then(res => {
-        if (res.length !== 0) {
-          const message = res.find(f => f.id === originMessageId)
-          if (message) setOriginMessage(message)
-        }
-      }).catch(e => {
+      getMessages('second', originId, {
+        limit: '1',
+        around: originMessageId
+      }, setOriginMessage).catch(e => {
         console.error(e)
       })
     } else if(originMessage && originMessage.id !== originMessageId) setOriginMessage(undefined)
 
     if (destinationId.length > 17){
-      customPrincipalFetch<DiscordChannel>(`channels/${destinationId}`).then(res => {
+      getChannel('principal', destinationId).then(res => {
         if (res.id !== undefined) {
           setDestinationChannel(res)
           if (res.last_message_id) {
-            customPrincipalFetch<DiscordMessage[]>(`channels/${destinationId}/messages?limit=2`).then(messages => {
+            getMessages('principal', destinationId, {
+              limit: '2'
+            }).then(messages => {
               if (messages.length !== 0) {
                 const message = messages[0]
                 setMessageDestination(message)
@@ -108,7 +105,10 @@ export default function MoveFiles(){
         duration: 20
       })
 
-      customSecondFetch<DiscordMessage[]>(`channels/${message.channelId}/messages?around=${message.id}&limit=1`).then(res => {
+      getMessages('second', message.channelId, {
+        limit: '1',
+        around: message.id
+      }).then(res => {
         if (res.length !== 0) {
           const messageFiles = res.find(f => f.id === message.id)?.attachments
           

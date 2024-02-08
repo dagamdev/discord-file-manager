@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, ChangeEvent } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
 import type { DiscordChannel } from "../../types"
 import Attachment from "./Attachment"
 import Channel from "./Channel"
@@ -17,7 +17,9 @@ export default function Container({ title, channel, manage = false }: {
     messageDestination,
     setMessageDestination, 
     destinationChannel,
-    setDestinationChannel
+    setDestinationChannel,
+    fileNumber,
+    setFileNumber
   } = useMoveFiles()
   const message = manage ? originMessage : messageDestination
   const { createNotification } = useNotifications()
@@ -25,11 +27,6 @@ export default function Container({ title, channel, manage = false }: {
   const [fileIds, setFileIds] = useState<string[]>([])
   const [error, setError] = useState('')
   const [viewFile, setViewFile] = useState(false)
-  const [fileNumber, setFileNumber] = useState(0)
-
-  const lastAttachmentDestination = useMemo(()=> {
-    return messageDestination?.attachments.slice().pop()
-  }, [messageDestination])
   
   useEffect(()=> {
     if(message && message.attachments.length === 0) setError(manage
@@ -48,20 +45,13 @@ export default function Container({ title, channel, manage = false }: {
       })
     } 
     
-  }, [message, lastAttachmentDestination, fileNumber, error])
+  }, [message, fileNumber, error])
 
   useEffect(()=> {
     if(message?.attachments.length){
       setFileIds(message.attachments.map(m=> m.id))
     } 
   }, [message])
-
-  useEffect(()=> {
-    if (manage) {
-      setFileNumber(parseInt(lastAttachmentDestination?.filename.match(/\d+/g)?.[0] || '0'))
-    }
-  }, [lastAttachmentDestination])
-
 
   const onChange = ({currentTarget: {value}}: ChangeEvent<HTMLInputElement>) => {
     if(value) setFileNumber(parseInt(value))
@@ -102,6 +92,8 @@ export default function Container({ title, channel, manage = false }: {
                   if (messages.length !== 0) {
                     const message = messages[0]
                     setMessageDestination(message)
+                    const lastAttachment = message.attachments.slice(-1)[0]
+                    setFileNumber(parseInt(lastAttachment?.filename.match(/\d+/g)?.[0] || '0'))
                   } else {
                     createNotification({
                       type: 'INFO',
@@ -159,7 +151,7 @@ export default function Container({ title, channel, manage = false }: {
       {error ? <p>{error}</p> : 
         (message &&
           <ul className='channelSection-files'>
-            {message.attachments.map(at=> <Attachment key={at.id} attachment={at} manage={manage} setFiles={setFileIds} viewFile={viewFile} check={fileIds.some(s=> s === at.id)} />)}
+            {(manage ? message.attachments : message.attachments.slice(-2)).map(at=> <Attachment key={at.id} attachment={at} manage={manage} setFiles={setFileIds} viewFile={viewFile} check={fileIds.some(s=> s === at.id)} />)}
           </ul>
         )
       }

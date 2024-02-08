@@ -109,13 +109,28 @@ export const customPrincipalFetch = createCustomFetch(PRINCIPAL_TOKEN)
 
 export const customSecondFetch = createCustomFetch(SECOND_TOKEN) 
 
-export async function myApiFetch<T = any>(route: string, method?: string, body?: object): Promise<T> {
+export async function myApiFetch<T = any>(route: string, data?: {
+  method?: 'GET' | 'POST' | 'DELETE'
+  headers?: {[key: string]: string}
+  body?: object
+}): Promise<T> {
+  let headers: HeadersInit = { }
+
+  if (data?.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  if (data?.headers !== undefined) {
+    headers = {
+      ...headers,
+      ...data.headers
+    }
+  }
+  
   return fetch(`${ENDPOINT}dc/${route}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: body ? JSON.stringify(body) : undefined
+    method: data?.method,
+    headers,
+    body: data?.body ? JSON.stringify(data.body) : undefined
   }).then(prom=> prom.json())
 }
 

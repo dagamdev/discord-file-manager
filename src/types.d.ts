@@ -45,14 +45,17 @@ export interface DiscordChannel {
   rate_limit_per_user?: number
 }
 
-export interface DiscordAttachment {
+export interface BaseAttachment {
   id: string
   filename: string
-  description?: string
-  content_type?: string
   size: number
   url: string
   proxy_url: string
+}
+
+export interface DiscordAttachment extends BaseAttachment {
+  description?: string
+  content_type?: string
   width?: number
   height?: number
   ephemeral?: boolean
@@ -66,17 +69,15 @@ export interface DiscordMessage {
   type: number
   content: string
   channel_id: string
-  author: DiscordUser
+  author?: DiscordUser
   attachments: DiscordAttachment[]
   embeds: any[]
   mentions: any[]
   mention_roles: string[]
-  pinned: boolean
   mention_everyone: boolean
   tts: boolean
   timestamp: string
   edited_timestamp: string
-  flags: number
 }
 
 export interface DiscordGuild {

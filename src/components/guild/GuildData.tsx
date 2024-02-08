@@ -1,23 +1,17 @@
-import { useDiscord } from '../../hooks/useDiscord'
+import { getGuild } from '../../lib/myDiscordAPI'
 import { DiscordGuild } from '../../types'
 import './guild.css'
 
 import { useState, ChangeEvent } from 'react'
 
 export default function GuildData(){
-  const { getGuild } = useDiscord()
   const [guildlId, setGuildlId] = useState('')
   const [guild, setGuild] = useState<DiscordGuild>()
   
-
-  
-  const handleChange = ({currentTarget: {value}}: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async ({currentTarget: {value}}: ChangeEvent<HTMLInputElement>) => {
     setGuildlId(value)
     if(value.length > 17){
-      getGuild({
-        guildId: value,
-        setGuild
-      })
+      await getGuild(value, setGuild)
     }
   }
 

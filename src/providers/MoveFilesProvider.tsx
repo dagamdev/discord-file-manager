@@ -7,6 +7,7 @@ export default function MoveFilesProvider ({ children }: { children: ReactNode }
   const [messageDestination, setMessageDestination] = useState<DiscordMessage>()
   const [originChannel, setOriginChannel] = useState<DiscordChannel>()
   const [originMessage, setOriginMessage] = useState<DiscordMessage>()
+  const [fileNumber, setFileNumber] = useState(0)
 
   return (
     <MoveFilesContext.Provider value={{
@@ -17,7 +18,9 @@ export default function MoveFilesProvider ({ children }: { children: ReactNode }
       originChannel,
       setOriginChannel,
       originMessage,
-      setOriginMessage
+      setOriginMessage,
+      fileNumber,
+      setFileNumber
     }}>
       {children}
     </MoveFilesContext.Provider>

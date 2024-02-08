@@ -14,7 +14,8 @@ export default function MoveFiles(){
     originChannel,
     setOriginChannel,
     originMessage,
-    setOriginMessage
+    setOriginMessage,
+    setFileNumber
   } = useMoveFiles()
   const { createNotification } = useNotifications()
   const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ export default function MoveFiles(){
       })
     } else if(originMessage && originMessage.id !== originMessageId) setOriginMessage(undefined)
 
-    if (destinationId.length > 17){
+    if (destinationId.length > 17 && destinationId !== destinationChannel?.id){
       getChannel('principal', destinationId).then(res => {
         if (res.id !== undefined) {
           setDestinationChannel(res)
@@ -52,6 +53,8 @@ export default function MoveFiles(){
               if (messages.length !== 0) {
                 const message = messages[0]
                 setMessageDestination(message)
+                const lastAttachment = message.attachments.slice(-1)[0]
+                setFileNumber(parseInt(lastAttachment?.filename.match(/\d+/g)?.[0] || '0'))
               } else {
                 createNotification({
                   type: 'INFO',

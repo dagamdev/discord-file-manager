@@ -10,6 +10,8 @@ interface MoveFilesContextData {
   setDestinationChannel: StateFunction<DiscordChannel | undefined>
   messageDestination?: DiscordMessage
   setMessageDestination: StateFunction<DiscordMessage | undefined>
+  fileNumber: number
+  setFileNumber: StateFunction<number>
 }
 
 export const MoveFilesContext = createContext<MoveFilesContextData | undefined>(undefined)

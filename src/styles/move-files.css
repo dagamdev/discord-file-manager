@@ -15,17 +15,25 @@
   justify-content: center;
 }
 
-.moveFiles-form {
+.moveFiles-header {
   top: 0;
-  gap: 20px;
   width: 100%;
   padding: 10px;
   z-index: 40;
-  display: flex;
   position: sticky;
   border-bottom: 1px solid black;
-  justify-content: center;
   background-color: var(--Section-color);
+}
+
+.moveFiles-version {
+  position: absolute;
+  pointer-events: none;
+}
+
+.moveFiles-form {
+  gap: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .moveFiles-form label{
@@ -37,13 +45,29 @@
 }
 
 .moveFiles-form input{
-  width: 160px;
+  min-width: 160px;
+  width: auto;
   border: 1px solid gray;
   padding: 4px 8px;
   outline: none;
   font-size: 12px;
   background: var(--Element-color);
   border-radius: 4px;
+}
+
+.getFile{
+  display: flex;
+  column-gap: 10px;
+  align-items: end;
+
+  & button {
+    display: flex;
+    padding: 6px 12px;
+  }
+
+  & .button-icon{
+    font-size: 22px;
+  }
 }
 
 

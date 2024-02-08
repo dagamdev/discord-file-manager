@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, ChangeEvent } from 'react'
 import type { DiscordChannel, DiscordMessage } from "../../types"
 import Attachment from "./Attachment"
 import Channel from "./Channel"
-import { customPrincipalFetch, customSecondFetch, getFileNewData } from '../../utils/functions'
+import { customSecondFetch, getFileNewData, myApiFetch } from '../../utils/functions'
 import { useMoveFiles, useNotifications, useTooltip } from '../../contexts'
 import { BiShow, BiHide } from 'react-icons/bi'
 
@@ -31,7 +31,6 @@ export default function Container({ title, channel, manage = false }: {
   }, [messageDestination])
   
   useEffect(()=> {
-    // console.log(message?.attachments)
     if(message && message.attachments.length === 0) setError(manage
       ? 'The message does not contain files'
       : 'The last message does not contain files'
@@ -77,36 +76,12 @@ export default function Container({ title, channel, manage = false }: {
       at.filename = name
     })
 
-    const attachments: {
-      id: number
-      filename: string
-      description?: string
-    }[] = []
-    
-
     if(destinationChannel && files?.length){
-      const body = new FormData()
-
-      for (const [key, file] of files.entries()) {
-        const resposne = await fetch(file.proxy_url)
-        const blob = await resposne.blob()
-
-        body.append(`files[${key}]`, blob, file.filename)
-        attachments.push({
-          id: key,
-          filename: file.filename,
-          description: file.description
-        })
-      }
-
-      body.append('payload_json', JSON.stringify({
-        attachments
-      }))
-
-
-      customPrincipalFetch(`channels/${destinationChannel.id}/messages`, {
+      myApiFetch(`/channels/${destinationChannel.id}`, {
         method: 'POST',
-        body
+        body: {
+          attachments: files
+        }
       }).then(res => {
         if(res.id){
           const s = files.length != 1 ? 's' : ''
@@ -154,8 +129,9 @@ export default function Container({ title, channel, manage = false }: {
             duration: 30
           })
         }
+      }).catch(e => {
+        console.error(e)
       })
-      .catch((e)=> console.error(e))
     }
   }
 

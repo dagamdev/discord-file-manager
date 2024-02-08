@@ -94,16 +94,17 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
         ? <div className='attachment-file'>
           {head}
           {attachment.content_type?.includes('video') ?
-          <video src={attachment.url} preload='metadata' controls autoPlay >
-            {/* <source src="ruta/al/video.webm" type="video/webm" />
-            <source src="ruta/al/video.ogv" type="video/ogg" /> */}
-            Tu navegador no soporta la etiqueta de video.
-          </video> :
-          <img onClick={handleClick} src={attachment.url} alt={attachment.filename} />}
+            <video src={attachment.url} preload='metadata' controls autoPlay >
+              {/* <source src="ruta/al/video.webm" type="video/webm" />
+              <source src="ruta/al/video.ogv" type="video/ogg" /> */}
+              Tu navegador no soporta la etiqueta de video.
+            </video> :
+            <img onClick={handleClick} src={attachment.url} alt={attachment.filename} />
+          }
           
-          <div className='dimentions'>
+          {(attachment.width && attachment.height) && <div className='dimentions'>
             <strong>{attachment.width} × {attachment.height}</strong>
-          </div>
+          </div>}
         </div>
         : head
       }

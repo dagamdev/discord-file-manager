@@ -146,8 +146,8 @@ const extencionReplaces: {[key: string]: string} = {
 }
 
 export function getFileNewData(fileName: string, fileCount: number) {
-  const extencion = fileName.split('.').pop()
-  const type =  fileTypes.video.some(s=> s==extencion) ? 'video' : fileTypes.gif.some(s=> s==extencion) ? 'gif' : 'img'
+  const extencion = fileName.split('.').pop()?.toLowerCase()
+  const type =  fileTypes.video.some(s=> s === extencion) ? 'video' : fileTypes.gif.some(s=> s==extencion) ? 'gif' : 'img'
  
   return { type, name: `${type}${fileCount}.`+(extencion ? extencionReplaces[extencion] || extencion : extencion) }
 }

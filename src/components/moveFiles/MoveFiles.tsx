@@ -50,17 +50,18 @@ export default function MoveFiles(){
             getMessages('principal', destinationId, {
               limit: '2'
             }).then(messages => {
-              if (messages.length !== 0) {
-                const message = messages[0]
-                setMessageDestination(message)
-                const lastAttachment = message.attachments.slice(-1)[0]
-                setFileNumber(parseInt(lastAttachment?.filename.match(/\d+/g)?.[0] || '0'))
-              } else {
+              if (messages.length === 0) {
                 createNotification({
                   type: 'INFO',
                   content: 'El canal de destino no contiene mensajes',
                   duration: 30
                 })
+                setFileNumber(0)
+              } else {
+                const message = messages[0]
+                setMessageDestination(message)
+                const lastAttachment = message.attachments.slice(-1)[0]
+                setFileNumber(parseInt(lastAttachment?.filename.match(/\d+/g)?.[0] || '0'))
               }
             }).catch(e => {
               console.error(e)

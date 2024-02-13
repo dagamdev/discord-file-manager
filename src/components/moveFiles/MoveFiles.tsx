@@ -180,7 +180,7 @@ export default function MoveFiles(){
           channel={destinationChannel}
         />}
         {originChannel && <Container
-          title='Target message and channel'
+          title='Target channel'
           channel={originChannel}
           manage
         />}

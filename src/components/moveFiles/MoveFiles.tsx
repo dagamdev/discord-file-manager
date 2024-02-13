@@ -50,13 +50,13 @@ export default function MoveFiles(){
             getMessages('principal', destinationId, {
               limit: '2'
             }).then(messages => {
+              setFileNumber(0)
               if (messages.length === 0) {
                 createNotification({
                   type: 'INFO',
                   content: 'El canal de destino no contiene mensajes',
                   duration: 30
                 })
-                setFileNumber(0)
               } else {
                 const message = messages[0]
                 setMessageDestination(message)
@@ -74,6 +74,7 @@ export default function MoveFiles(){
               duration: 30
             })
             setMessageDestination(undefined)
+            setFileNumber(0)
           }
         }
       }).catch(e => {

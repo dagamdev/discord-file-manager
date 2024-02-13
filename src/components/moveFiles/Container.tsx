@@ -35,12 +35,9 @@ export default function Container({ title, channel, manage = false }: {
     )
     else if(error) setError('')
 
-    if(manage && message?.attachments.length) {
-      let fileCount = fileNumber
-      
-      message.attachments.forEach(at=> {
-        fileCount++
-        const { name } = getFileNewData(at.filename, fileCount)
+    if(manage && message?.attachments.length) {      
+      message.attachments.forEach((at, i) => {
+        const { name } = getFileNewData(at.filename, fileNumber + i + 1)
         at.filename = name
       })
     } 

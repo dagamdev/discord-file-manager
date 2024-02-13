@@ -67,7 +67,7 @@ export default function Attachment({attachment, manage, setFiles, check, viewFil
     <header className={`attachment-head ${showFile ? 'file' : ''}`}>
       <p>
         <strong>{attachment.filename}</strong>
-        <span>{(attachment.size/1048576).toFixed(2)} MB</span>
+        <span>{(attachment.size/1_048_576).toFixed(2)} MB</span>
       </p>
       <div onClick={downloadFile} className='attachment-head-download badge' {...events} data-tooltip='Descargar' >
         <BsDownload />
